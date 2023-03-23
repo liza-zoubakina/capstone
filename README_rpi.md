@@ -4,8 +4,15 @@ averaging
 
 make sure to enable picam in raspi-config (i think?)
 
-output directory is `/capstone/pictures` (make sure this exists and has 777
+output directory is `/capstone/pictures/` (make sure this exists and has 777
 permissions)
+
+picture log is `/capstone/pictures_log/`
+New images are saved as `date-time-before.jpg` and `date-time-after.jpg`
+
+output log is `/capstone/pixel_averages.log`
+`date time before_pixel_average after_pixel_average after-before`
+
 
 ## links
 see these links for connections:
