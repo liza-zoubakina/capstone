@@ -13,6 +13,9 @@ New images are saved as `date-time-before.jpg` and `date-time-after.jpg`
 output log is `/capstone/pixel_averages.log`
 `date time before_pixel_average after_pixel_average after-before`
 
+## Initial setup
+`sudo apt upgrade all`
+install the packages below
 
 ## links
 see these links for connections:
@@ -29,6 +32,7 @@ see these links for connections:
 
 `{sudo apt install} `
 ```
+python
 python-rpi.gpio
 python3-rpi.gpio
 cv2
