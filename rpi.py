@@ -142,8 +142,7 @@ camera.configure(camera_config)
 current_time = time_to_string()
 
 # main loop
-# while True:
-if True:
+while True:
     # print(button_flag)
     if state == 0: #idle
         GPIO.output(BEFORE, GPIO.HIGH) #show idle LED
