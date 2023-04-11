@@ -22,26 +22,6 @@ AFTER = 12
 DISPLAY = 13
 QUIT = 15
 
-# Set up RPi GPIO
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BOARD)
-
-GPIO.setup(BUTTON,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #next step button {before, after, print results}
-GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=button_callback, bouncetime=200)
-
-GPIO.setup(QUIT,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #quit button
-GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=cleanup, bouncetime=200)
-
-GPIO.setup(BEFORE,GPIO.OUT) #idle/ready for before picture indicator LED
-GPIO.setup(AFTER,GPIO.OUT) #ready for after picture indicator LED
-GPIO.setup(DISPLAY,GPIO.OUT) #ready to display result indicator LED
-
-camera = PiCamera()
-#camera.rotation = {0, 90, 180, 270) # use if image is rotated
-
-# Set up log file
-file = open(LOG_FILE, 'a')
-
 #################################
 '''
 states:
@@ -58,7 +38,6 @@ states:
 state = 0
 button_flag = 0
 print_once = 1
-current_time = time_to_string()
 
 #button callback functions
 def button_callback(channel):
@@ -133,6 +112,29 @@ def write_log(time, before, after, diff):
     return
 
 
+# Set up RPi GPIO
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)
+
+# GPIO.setup(BUTTON,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #next step button {before, after, print results}
+# GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=button_callback, bouncetime=200)
+
+# GPIO.setup(QUIT,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #quit button
+# GPIO.add_event_detect(QUIT, GPIO.RISING, callback=cleanup, bouncetime=200)
+
+GPIO.setup(BEFORE,GPIO.OUT) #idle/ready for before picture indicator LED
+GPIO.setup(AFTER,GPIO.OUT) #ready for after picture indicator LED
+GPIO.setup(DISPLAY,GPIO.OUT) #ready to display result indicator LED
+
+camera = PiCamera()
+#camera.rotation = {0, 90, 180, 270) # use if image is rotated
+
+# get current time
+current_time = time_to_string()
+
+# Set up log file
+file = open(LOG_FILE, 'a')
+
 
 # main loop
 while True:
@@ -146,14 +148,14 @@ while True:
             current_time = time_to_string() # get date and time for log 
             GPIO.output(BEFORE, GPIO.LOW) #no longer idle
             state = 1
-    else if state == 1: #take picture before
+    elif state == 1: #take picture before
         camera.start_preview()
         sleep(SLEEP_TIME)
         camera.capture(PICTURE_PATH + '/before.jpg')
         camera.stop_preview()
         print_once = 1
         state == 2
-    else if state == 2: #wait for acetoning by hooman
+    elif state == 2: #wait for acetoning by hooman
         GPIO.output(AFTER, GPIO.HIGH) #show waiting for sample LED
         if print_once:
             print("Ready for after picture. Remove sample, apply acetone, allow to dry, place sample, push button.")
@@ -162,21 +164,21 @@ while True:
             print("Button pressed, taking after picture, wait until prompted before removing sample")
             GPIO.output(AFTER, GPIO.LOW) #no longer waiting
             state == 3
-    else if state == 3: #take picture after
+    elif state == 3: #take picture after
         camera.start_preview()
         sleep(SLEEP_TIME)
         camera.capture(PICTURE_PATH + '/after.jpg')
         camera.stop_preview()
         print_once = 1
         state == 4
-    else if state == 4: #calculate values
+    elif state == 4: #calculate values
         print("calculating before pixel average")
         before_average = get_pixel_average(PICTURE_PATH + '/before.jpg')
         print("calculating after pixel average")
         after_average = get_pixel_average(PICTURE_PATH + '/after.jpg')
         diff = after_average-before_average
         state == 5
-    else if state == 5: #values ready to display
+    elif state == 5: #values ready to display
         GPIO.output(DISPLAY, GPIO.HIGH) #show ready to display values LED
         if print_once:
             print("Press button to display results. ")
@@ -185,7 +187,7 @@ while True:
             print("Button pressed, displaying results")
             GPIO.output(AFTER, GPIO.LOW) #no longer ready
             state == 6
-    else if state == 6: #display values, determine if petg or pla
+    elif state == 6: #display values, determine if petg or pla
         print("Before: " + before_average)
         print("After:  " + after_average)
         print("Difference: " + diff)

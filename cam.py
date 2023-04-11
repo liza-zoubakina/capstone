@@ -40,12 +40,12 @@ def time_to_string():
 
 def pic_capture(channel):
 	print("made it here")
-	picam2.start_preview(Preview.QT)
+	# picam2.start_preview(Preview.QT)
 	timestamp = time_to_string()
 	picam2.start()
 	time.sleep(5)
 	picam2.capture_file('pictures/%s.jpg' % timestamp)
-	picam2.stop_preview()
+	# picam2.stop_preview()
 	picam2.stop()
 
 # Set up RPi GPIO
@@ -53,7 +53,7 @@ GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BOARD)
 
 GPIO.setup(BUTTON,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #next step button {before, after, print results}
-GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=pic_capture, bouncetime = 500)
+GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=pic_capture, bouncetime = 1000)
 
 
 
