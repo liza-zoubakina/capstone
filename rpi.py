@@ -1,9 +1,12 @@
+import board
+import datetime
+import neopixel
 import RPi.GPIO as GPIO
+import shutil
+from time import sleep
+
 from picamera2 import Picamera2 as PiCamera
 from picamera2 import Preview
-from time import sleep
-import datetime
-import shutil
 
 import cv2 
 import numpy as np
@@ -18,11 +21,19 @@ LOG_FILE = '/home/pi/capstone/pixel_averages.log'
 LOG_PICTURES = '/home/pi/capstone/pictures_log'
 
 # define RPi pinout
-BUTTON = 10
-BEFORE = 11
-AFTER = 12
-DISPLAY = 13
-QUIT = 15
+BUTTON = board.D15.id #board.D15 #board pin 10
+# BEFORE = 11
+# AFTER = 12
+# DISPLAY = 13
+# QUIT = 15
+
+# neopixel setup code
+NEOPIXEL = board.D18 #board pin 12
+num_pixels = 24
+ORDER = neopixel.GRB
+
+pixels = neopixel.NeoPixel(NEOPIXEL, num_pixels, brightness=0.2, auto_write = False, pixel_order = ORDER)
+
 
 
 
@@ -117,9 +128,20 @@ def write_log(time, before, after, diff):
     file.close()
     return
 
+def neopixel_on():
+    pixels.fill((255, 255, 255))
+    pixels.show()
+    return
+def neopixel_off():
+    pixels.fill((0, 0, 0))
+    pixels.show()
+    return
+
+# print(GPIO.getmode())
+
 # Set up RPi GPIO
 GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BOARD)
+# GPIO.setmode(GPIO.BOARD)
 
 GPIO.setup(BUTTON,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #next step button {before, after, print results}
 GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=button_callback, bouncetime=1000)
@@ -127,11 +149,12 @@ GPIO.add_event_detect(BUTTON, GPIO.RISING, callback=button_callback, bouncetime=
 # GPIO.setup(QUIT,GPIO.IN, pull_up_down=GPIO.PUD_DOWN) #quit button
 # GPIO.add_event_detect(QUIT, GPIO.RISING, callback=cleanup, bouncetime=200)
 
-GPIO.setup(BEFORE,GPIO.OUT) #idle/ready for before picture indicator LED
-GPIO.setup(AFTER,GPIO.OUT) #ready for after picture indicator LED
-GPIO.setup(DISPLAY,GPIO.OUT) #ready to display result indicator LED
+# GPIO.setup(BEFORE,GPIO.OUT) #idle/ready for before picture indicator LED
+# GPIO.setup(AFTER,GPIO.OUT) #ready for after picture indicator LED
+# GPIO.setup(DISPLAY,GPIO.OUT) #ready to display result indicator LED
 
 camera = PiCamera()
+PiCamera.set_logging(PiCamera.DEBUG)
 #camera.rotation = {0, 90, 180, 270) # use if image is rotated
 camera_config = camera.create_still_configuration(
         main = {"size": (1920, 1080)},
@@ -145,42 +168,48 @@ current_time = time_to_string()
 while True:
     # print(button_flag)
     if state == 0: #idle
-        GPIO.output(BEFORE, GPIO.HIGH) #show idle LED
+        # GPIO.output(BEFORE, GPIO.HIGH) #show idle LED
         if print_once:
-            print("Ready for before picture. Insert sample.")
+            print("Ready for before picture. Insert sample. Press enter to continue")
             print_once = 0
-        if button_flag: #button pressed
+        # if button_flag: #button pressed
+        if input()=='': #button pressed
             print("Button pressed, taking before picture, wait until prompted before removing sample")
             current_time = time_to_string() # get date and time for log 
-            GPIO.output(BEFORE, GPIO.LOW) #no longer idle
+            # GPIO.output(BEFORE, GPIO.LOW) #no longer idle
             state = 1
-            button_flag = 0
+            # button_flag = 0
     elif state == 1: #take picture before
+        neopixel_on()
         camera.start_preview(Preview.QT)
         camera.start()
         sleep(SLEEP_TIME)
         camera.capture_file(PICTURE_PATH + '/before.jpg')
         camera.stop_preview()
         camera.stop()
+        neopixel_off()
         print_once = 1
         state = 2
     elif state == 2: #wait for acetoning by hooman
-        GPIO.output(AFTER, GPIO.HIGH) #show waiting for sample LED
+        # GPIO.output(AFTER, GPIO.HIGH) #show waiting for sample LED
         if print_once:
             print("Ready for after picture. Remove sample, apply acetone, allow to dry, place sample, push button.")
             print_once = 0
-        if button_flag: #button pressed
+        # if button_flag: #button pressed
+        if input()=='': #button pressed
             print("Button pressed, taking after picture, wait until prompted before removing sample")
-            GPIO.output(AFTER, GPIO.LOW) #no longer waiting
+            # GPIO.output(AFTER, GPIO.LOW) #no longer waiting
             state = 3
-            button_flag = 0
+            # button_flag = 0
     elif state == 3: #take picture after
+        neopixel_on()
         camera.start_preview(Preview.QT)
         camera.start()
         sleep(SLEEP_TIME)
         camera.capture_file(PICTURE_PATH + '/after.jpg')
         camera.stop_preview()
         camera.stop()
+        neopixel_off()
         print_once = 1
         state = 4
     elif state == 4: #calculate values
@@ -191,13 +220,14 @@ while True:
         diff = after_average-before_average
         state = 5
     elif state == 5: #values ready to display
-        GPIO.output(DISPLAY, GPIO.HIGH) #show ready to display values LED
+        # GPIO.output(DISPLAY, GPIO.HIGH) #show ready to display values LED
         if print_once:
             print("Press button to display results. ")
             print_once = 0
-        if button_flag: #button pressed
+        # if button_flag: #button pressed
+        if input()=='': #button pressed
             print("Button pressed, displaying results")
-            GPIO.output(AFTER, GPIO.LOW) #no longer ready
+            # GPIO.output(DISPLAY, GPIO.LOW) #no longer ready
             state = 6
     elif state == 6: #display values, determine if petg or pla
         print("Before: " + str(before_average))
@@ -211,4 +241,5 @@ while True:
         copy_pictures_to_log(current_time)
         write_log(current_time, before_average, after_average, diff)
         print("Wrote to log file")
+        print("\n=================================\n")
         state = 0 #restart loop for next sample
