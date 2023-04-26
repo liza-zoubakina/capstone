@@ -12,10 +12,11 @@ import cv2
 import numpy as np
 
 # define parameters
-SF = .2 # image scaling. make smaller for faster
+SF = .8 # image scaling. make smaller for faster
 PICTURE_PATH = '/home/pi/capstone/pictures' # path where pictures are saved. Every time state == 0, this is overwritten
 THRESHOLD = .02 # to be tuned
 SLEEP_TIME = 2 # amount of time for camera to 'warm up'. Sample code has 5, but suggests min of 2 seconds
+CROP_FACTOR = 1
 
 LOG_FILE = '/home/pi/capstone/pixel_averages.log'
 LOG_PICTURES = '/home/pi/capstone/pictures_log'
@@ -70,14 +71,19 @@ def cleanup(channel):
     return
 
 #CV functions
-def get_pixel_average(picture_path): 
+def get_pixel_average(picture_path, string):
     # takes image path, removes background, finds average pixel value in foreground
     img = cv2.imread(picture_path)
-    img = cv2.blur(img,(25,25))
+    # img = cv2.blur(img,(25,25))
+    img = cv2.blur(img,(5,5))
 
-    w = int(SF*img.shape[1])
-    h = int(SF*img.shape[0])
-    img = cv2.resize(img,(w,h))
+    w = int(img.shape[1])
+    h = int(img.shape[0])
+
+    
+    # img = cv2.resize(img,(int(SF*w),int(SF*h)))
+    # img = img[int(h/CROP_FACTOR*2):int(h/CROP_FACTOR*3), int(w/CROP_FACTOR*2):int(w/CROP_FACTOR*3)] # crop to only middle fifth of picture
+    img = img[int(h/4):int(h/4*3), int(w/3):int(w/3*2)] # crop to only middle fifth of picture
 
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -91,6 +97,10 @@ def get_pixel_average(picture_path):
 
     mask_threshold = cv2.bitwise_not(mask_threshold);
     masked_eddie = cv2.bitwise_and(img, mask_threshold)
+    # cv2.imwrite(PICTURE_PATH + "/nomask.jpg", mask_threshold)
+    cv2.imwrite(PICTURE_PATH + "/maskededdie_" + string + ".jpg", masked_eddie)
+    cv2.imwrite(PICTURE_PATH + "/nomask.jpg_" + string + ".jpg", img)
+
     return calculate_average(img, mask_threshold)
 
 def calculate_average(img, mask):
@@ -214,9 +224,9 @@ while True:
         state = 4
     elif state == 4: #calculate values
         print("calculating before pixel average")
-        before_average = get_pixel_average(PICTURE_PATH + '/before.jpg')
+        before_average = get_pixel_average(PICTURE_PATH + '/before.jpg', 'before')
         print("calculating after pixel average")
-        after_average = get_pixel_average(PICTURE_PATH + '/after.jpg')
+        after_average = get_pixel_average(PICTURE_PATH + '/after.jpg', 'after')
         diff = after_average-before_average
         state = 5
     elif state == 5: #values ready to display
