@@ -1,11 +1,12 @@
 # 3D Printed Waste Recycling Initiative: EngSci ECE Capstone 2023
 
 Welcome to the GitHub Repo for our EngSci ECE Capstone: 3D Printed Waste Recycling Iniative at the Myhal Fabrication Facility.
-This repo mainly contains Python code with the following imported libraries: OpenCV, Numpy, picamera2, and Rasp Pi GPIO.
-In this repo, you will find several files used for our Acetone solution prototype. A file hierarchy is presented below.
 
-# File Hierarchy
-'''
+In this repo, you will find several files used for our Acetone solution prototype. We used the following imported libraries: OpenCV, Numpy, picamera2, and Rasp Pi GPIO. A file hierarchy is presented below.
+
+## File Hierarchy
+
+<pre>
 📦capstone
  ┣ 📜rpi.py - Main Python file which controls the Raspberry Pi
  ┣ 📜start_collection.sh - Shell script which runs the rpi.py file
@@ -21,6 +22,6 @@ In this repo, you will find several files used for our Acetone solution prototyp
    ┣ 📜keyboard_test_2.py
    ┣ 📜rpi_keyboard.py
    ┗ 📜test.py
-'''
+</pre>
    
   
